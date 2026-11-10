@@ -31,3 +31,4 @@ function deleteCustomerData(id) {
     customers = customers.filter(c => c.id !== id);
     saveCustomers();
 }
+ 
