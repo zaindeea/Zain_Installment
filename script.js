@@ -7,60 +7,35 @@ let editingContractId = null;
 
 // تهيئة الحساب الافتراضي للمصمم
 if (users.length === 0) {
-    users.push({ id: 1, name: 'Zain', pass: '01327798', role: 'admin' });
+    users.push({ id: 1, name: 'Zain', pass: '01327798', role: 'admin', perms: { add_contract:true, edit_contract:true, del_contract:true, add_payment:true, manage_cust:true, view_accounts:true } });
     localStorage.setItem('zain_users', JSON.stringify(users));
+} else {
+    let needsUpdate = false;
+    users.forEach(u => {
+        if(!u.perms) {
+            u.perms = u.role === 'admin' 
+                ? { add_contract:true, edit_contract:true, del_contract:true, add_payment:true, manage_cust:true, view_accounts:true } 
+                : { add_contract:true, edit_contract:false, del_contract:false, add_payment:true, manage_cust:false, view_accounts:false };
+            needsUpdate = true;
+        } else if (typeof u.perms.view_accounts === 'undefined') {
+             u.perms.view_accounts = (u.role === 'admin');
+             needsUpdate = true;
+        }
+    });
+    if(needsUpdate) localStorage.setItem('zain_users', JSON.stringify(users));
 }
 
-// --- توليد نماذج الزبائن والعقود الوهمية (Mock Data) ---
-function loadMockData() {
-    if (customers.length === 0 && contracts.length === 0) {
-        const d1 = new Date(); d1.setMonth(d1.getMonth() - 2); const twoMonthsAgo = d1.toISOString().split('T')[0];
-        const d2 = new Date(); d2.setMonth(d2.getMonth() - 1); const oneMonthAgo = d2.toISOString().split('T')[0];
-        const d3 = new Date(); const todayStr = d3.toISOString().split('T')[0];
-        const d4 = new Date(); d4.setMonth(d4.getMonth() + 1); const nextMonth = d4.toISOString().split('T')[0];
-
-        let c1Id = addCustomer('علي قاسم (متأخر)', '07701234567', 'بغداد، الكرادة', 'محمد سالم');
-        let c2Id = addCustomer('سارة حسن (مستمر)', '07801234567', 'بغداد، المنصور', 'بدون كفيل');
-        let c3Id = addCustomer('عمر خالد (مكتمل)', '07901234567', 'بغداد، الأعظمية', 'أحمد محمود');
-
-        // 1. عقد متأخر (Delayed)
-        contracts.push({
-            id: 101, customerId: c1Id, product: 'ثلاجة LG', buyDate: twoMonthsAgo, 
-            totalPrice: 500000, advance: 100000, remaining: 400000, status: 'active',
-            payments: [
-                { id: 1, date: oneMonthAgo, amount: 200000, paid: false, payDate: null }, // متأخر
-                { id: 2, date: todayStr, amount: 200000, paid: false, payDate: null }
-            ]
-        });
-
-        // 2. عقد مستمر (Active)
-        contracts.push({
-            id: 102, customerId: c2Id, product: 'غسالة سامسونج', buyDate: todayStr, 
-            totalPrice: 300000, advance: 50000, remaining: 250000, status: 'active',
-            payments: [
-                { id: 1, date: nextMonth, amount: 250000, paid: false, payDate: null }
-            ]
-        });
-
-        // 3. عقد مكتمل (Completed)
-        contracts.push({
-            id: 103, customerId: c3Id, product: 'شاشة سوني 55 بوصة', buyDate: twoMonthsAgo, 
-            totalPrice: 400000, advance: 200000, remaining: 0, status: 'completed',
-            payments: [
-                { id: 1, date: oneMonthAgo, amount: 200000, paid: true, payDate: oneMonthAgo }
-            ]
-        });
-
-        localStorage.setItem('zain_contracts', JSON.stringify(contracts));
-    }
+// دالة فحص الصلاحيات
+function hasPerm(permKey) {
+    if(!currentUser) return false;
+    if(currentUser.role === 'admin') return true;
+    return currentUser.perms && currentUser.perms[permKey] === true;
 }
 
-// --- عند التحميل ---
 window.onload = () => {
     const savedTheme = localStorage.getItem('zain_theme') || 'light';
     if(savedTheme === 'dark') toggleTheme(true);
     
-    // تحميل نص الواتساب المحفوظ
     const savedWaText = localStorage.getItem('wa_template');
     if(savedWaText && document.getElementById('wa-template')) {
         document.getElementById('wa-template').value = savedWaText;
@@ -71,7 +46,6 @@ window.onload = () => {
     const sessionUser = sessionStorage.getItem('zain_logged_in');
     if (sessionUser) {
         currentUser = JSON.parse(sessionUser);
-        loadMockData(); // توليد البيانات إذا كانت فارغة
         initApp();
     } else {
         setTimeout(() => {
@@ -105,7 +79,6 @@ function initLogoAnimation() {
     }, 8000);
 }
 
-// --- نظام الدخول ---
 function login() {
     const user = document.getElementById('login-user').value.trim();
     const pass = document.getElementById('login-pass').value.trim();
@@ -116,7 +89,6 @@ function login() {
         sessionStorage.setItem('zain_logged_in', JSON.stringify(found));
         document.getElementById('splash-screen').classList.add('hidden');
         document.getElementById('login-screen').classList.add('hidden');
-        loadMockData();
         initApp();
     } else {
         document.getElementById('login-error').innerText = "البيانات غير صحيحة!";
@@ -134,10 +106,29 @@ function initApp() {
     document.getElementById('app-layout').classList.remove('hidden');
     
     document.getElementById('current-user-role').innerText = currentUser.role === 'admin' ? 'مدير النظام' : 'موظف';
+    
+    // إخفاء الأزرار للمدير
     if (currentUser.role !== 'admin') {
         document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden'));
     }
+
+    // إخفاء الأزرار حسب الصلاحيات
+    if(!hasPerm('add_contract')) document.querySelectorAll('.perm-add-contract').forEach(el => el.style.display = 'none');
+    if(!hasPerm('view_accounts')) document.querySelectorAll('.perm-view-accounts').forEach(el => el.style.display = 'none');
     
+    // Auto-fill customer data based on typed name
+    document.getElementById('c-name').addEventListener('input', function(e) {
+        const val = e.target.value.trim();
+        const cust = customers.find(c => c.name === val);
+        if(cust) {
+            document.getElementById('c-phone').value = cust.phone || '';
+            document.getElementById('c-address').value = cust.address || '';
+            document.getElementById('c-sponsor').value = cust.sponsor || '';
+            document.getElementById('c-record-no').value = cust.recordNo || '';
+            document.getElementById('c-page-no').value = cust.pageNo || '';
+        }
+    });
+
     initLogoAnimation();
     updateDatalist();
     updateDashboard();
@@ -151,7 +142,9 @@ function switchTab(tabId) {
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
     document.getElementById(`view-${tabId}`).classList.remove('hidden');
     document.getElementById(`nav-${tabId}`).classList.add('active');
+    
     if(tabId === 'dashboard') updateDashboard();
+    if(tabId === 'accounts') updateAccounts();
 }
 
 function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
@@ -204,13 +197,10 @@ function sendBulkWhatsApp() {
                           .replace('\[المنتج\]', item.contract.product);
         
         let url = `https://wa.me/${formatWaNumber(item.cust.phone)}?text=${encodeURIComponent(msg)}`;
-        
-        // استخدام تايمر لتأخير فتح النوافذ لتجنب الحظر
         setTimeout(() => { window.open(url, '_blank'); }, index * 1000);
     });
 }
 
-// --- العمليات الحسابية ---
 function calcPreview() {
     const price = parseFloat(document.getElementById('c-price').value) || 0;
     const percent = parseFloat(document.getElementById('c-percent').value) || 0;
@@ -239,7 +229,6 @@ function updateDatalist() {
     });
 }
 
-// --- إدارة العقود (إضافة وتعديل وحذف) ---
 function openNewContractModal() {
     editingContractId = null;
     document.getElementById('contract-modal-title').innerText = 'عقد جديد';
@@ -249,6 +238,8 @@ function openNewContractModal() {
     document.getElementById('c-phone').value = '';
     document.getElementById('c-address').value = '';
     document.getElementById('c-sponsor').value = '';
+    document.getElementById('c-record-no').value = '';
+    document.getElementById('c-page-no').value = '';
     document.getElementById('c-product').value = '';
     document.getElementById('c-price').value = '';
     document.getElementById('c-advance').value = '0';
@@ -270,14 +261,16 @@ function editContractBtn(contractId) {
     document.getElementById('c-phone').value = cust.phone;
     document.getElementById('c-address').value = cust.address;
     document.getElementById('c-sponsor').value = cust.sponsor;
+    document.getElementById('c-record-no').value = cust.recordNo || '';
+    document.getElementById('c-page-no').value = cust.pageNo || '';
+    
     document.getElementById('c-product').value = contract.product;
     document.getElementById('c-date').value = contract.buyDate;
     
-    // استنتاج السعر والمقدم (بشكل تقريبي إذا لم تكن مخزنة بدقة)
     document.getElementById('c-price').value = contract.totalPrice; 
     document.getElementById('c-advance').value = contract.advance;
     document.getElementById('c-months').value = contract.payments.length;
-    document.getElementById('c-percent').value = "0"; // الفائدة لا يتم حفظها بشكل مفصول، نفترضها 0
+    document.getElementById('c-percent').value = "0"; 
     
     calcPreview();
     openModal('new-contract-modal');
@@ -289,14 +282,19 @@ function saveContract() {
     if (!name || !dateInput) return alert('يرجى إدخال اسم الزبون وتاريخ الشراء');
 
     if(editingContractId) {
-        if(!confirm('تنبيه هام: تعديل بيانات العقد (السعر أو المدة) سيؤدي إلى إلغاء جميع الدفعات السابقة وإعادة جدولة العقد من الصفر. هل أنت متأكد؟\n\nملاحظة: إذا كنت تريد تعديل اسم الزبون فقط، استخدم (سجل الزبائن).')) {
+        if(!confirm('تنبيه هام: تعديل بيانات العقد سيؤدي إلى إعادة جدولة الدفعات وتصفير التسديدات السابقة. هل أنت متأكد؟')) {
             return;
         }
     }
 
+    // This handles appending to an existing customer or creating a new one
     const customerId = addCustomer(
-        name, document.getElementById('c-phone').value,
-        document.getElementById('c-address').value, document.getElementById('c-sponsor').value
+        name, 
+        document.getElementById('c-phone').value,
+        document.getElementById('c-address').value, 
+        document.getElementById('c-sponsor').value,
+        document.getElementById('c-record-no').value,
+        document.getElementById('c-page-no').value
     );
 
     const calc = calcPreview();
@@ -343,7 +341,7 @@ function saveContract() {
     switchTab('contracts');
 }
 
-// --- عرض العقود  ---
+// --- عرض العقود ---
 let currentContractPage = 1;
 const itemsPerPage = 8;
 
@@ -402,12 +400,10 @@ function renderContracts() {
             <div class="list-item-footer">
                 <span style="font-size:12px; color:var(--text-muted);">${c.buyDate}</span>
                 <div class="action-btns">
-                    <button class="btn btn-outline btn-sm" onclick="printContract(${c.id})" title="طباعة / تصدير PDF"><i class="fa fa-print"></i> طباعة</button>
+                    <button class="btn btn-outline btn-sm" onclick="printContract(${c.id})" title="طباعة"><i class="fa fa-print"></i></button>
                     <button class="btn btn-primary btn-sm" onclick="openPayments(${c.id})"><i class="fa fa-list"></i> الدفعات</button>
-                    ${currentUser.role === 'admin' ? `
-                        <button class="btn btn-outline btn-sm" onclick="editContractBtn(${c.id})"><i class="fa fa-edit"></i></button>
-                        <button class="btn btn-outline-danger btn-sm" onclick="deleteContract(${c.id})"><i class="fa fa-trash"></i></button>
-                    ` : ''}
+                    ${hasPerm('edit_contract') ? `<button class="btn btn-outline btn-sm" onclick="editContractBtn(${c.id})"><i class="fa fa-edit"></i></button>` : ''}
+                    ${hasPerm('del_contract') ? `<button class="btn btn-outline-danger btn-sm" onclick="deleteContract(${c.id})"><i class="fa fa-trash"></i></button>` : ''}
                 </div>
             </div>
         `;
@@ -460,7 +456,7 @@ function openPayments(id) {
                     ? `<span class="text-green font-bold"><i class="fa fa-check-circle"></i> مسدد</span>` 
                     : `<div style="display:flex; align-items:center; gap:5px;">
                          <input type="number" id="pay-amt-${p.id}" value="${p.amount}" style="width:70px; padding:5px; border-radius:5px; border:1px solid var(--border); background:var(--bg-color); color:var(--text-main);">
-                         <button class="btn btn-success btn-sm" onclick="payInstallment(${p.id})">تسديد</button>
+                         ${hasPerm('add_payment') ? `<button class="btn btn-success btn-sm" onclick="payInstallment(${p.id})">تسديد</button>` : ''}
                        </div>`
                 }
             </div>
@@ -497,10 +493,11 @@ function payInstallment(payId) {
         openPayments(activeContractId);
         renderContracts();
         updateDashboard();
+        updateAccounts();
     }
 }
 
-// --- لوحة الإحصائيات ---
+// --- الإحصائيات والحسابات ---
 function updateDashboard() {
     let sales = 0, collected = 0, rem = 0;
     const delayedList = document.getElementById('delayed-list');
@@ -552,7 +549,53 @@ function updateDashboard() {
     document.getElementById('stat-delayed').innerText = delayCount;
 }
 
-// --- الزبائن (تعديل وحذف) ---
+function updateAccounts() {
+    let totalSales = 0, totalCollected = 0, totalRemaining = 0;
+    let recentPayments = [];
+
+    contracts.forEach(c => {
+        totalSales += c.totalPrice;
+        totalRemaining += c.remaining;
+        totalCollected += c.advance; 
+        
+        c.payments.forEach(p => {
+            if (p.paid) {
+                totalCollected += p.amount;
+                recentPayments.push({ ...p, custId: c.customerId, product: c.product });
+            }
+        });
+    });
+
+    document.getElementById('acc-total-capital').innerText = totalSales.toLocaleString() + ' دينار';
+    document.getElementById('acc-cash').innerText = totalCollected.toLocaleString();
+    document.getElementById('acc-debt').innerText = totalRemaining.toLocaleString();
+
+    const recentList = document.getElementById('recent-payments-list');
+    recentList.innerHTML = '';
+    
+    recentPayments.sort((a,b) => new Date(b.payDate) - new Date(a.payDate));
+    recentPayments.slice(0, 10).forEach(p => {
+        const cust = getCustomer(p.custId);
+        let item = document.createElement('div');
+        item.className = 'list-item';
+        item.innerHTML = `
+            <div class="list-item-header" style="border:none; padding:0;">
+                <div>
+                    <strong><i class="fa fa-arrow-down text-success"></i> ${p.amount.toLocaleString()} دينار</strong>
+                    <div class="text-muted mt-5" style="font-size:12px;">من: ${cust?cust.name:''} (${p.product})</div>
+                </div>
+                <div style="font-size:12px; color:var(--text-muted);">${p.payDate}</div>
+            </div>
+        `;
+        recentList.appendChild(item);
+    });
+    
+    if(recentPayments.length === 0) {
+        recentList.innerHTML = '<div class="text-center text-muted">لا توجد تحصيلات بعد</div>';
+    }
+}
+
+// --- الزبائن وملف القيود ---
 function renderCustomers() {
     const search = document.getElementById('search-customer').value.toLowerCase();
     const list = document.getElementById('customers-list');
@@ -580,18 +623,57 @@ function renderCustomers() {
             <div class="mt-10" style="font-size:13px; color:var(--text-muted); display:grid; grid-template-columns:1fr 1fr; gap:5px;">
                 <div><i class="fa fa-mobile-alt"></i> ${c.phone || '-'}</div>
                 <div><i class="fa fa-map-marker-alt"></i> ${c.address || '-'}</div>
-                <div><i class="fa fa-user-shield"></i> كفيل: ${c.sponsor || '-'}</div>
-                <div><i class="fa fa-calendar"></i> ${c.createdAt}</div>
             </div>
-            ${currentUser.role === 'admin' ? `
             <div class="list-item-footer mt-10" style="border-top:1px solid var(--border); padding-top:10px;">
-                <button class="btn btn-outline btn-sm w-100" onclick="editCustomerModal(${c.id})"><i class="fa fa-edit"></i> تعديل</button>
-                <button class="btn btn-outline-danger btn-sm ml-10" onclick="deleteCustomerBtn(${c.id})"><i class="fa fa-trash"></i></button>
+                <button class="btn btn-primary w-100" onclick="viewCustomerProfile(${c.id})">ملف القيود <i class="fa fa-folder-open ml-5"></i></button>
+                ${hasPerm('manage_cust') ? `
+                <button class="btn btn-outline btn-sm ml-10" onclick="editCustomerModal(${c.id})"><i class="fa fa-edit"></i></button>
+                <button class="btn btn-outline-danger btn-sm" onclick="deleteCustomerBtn(${c.id})"><i class="fa fa-trash"></i></button>
+                ` : ''}
             </div>
-            ` : ''}
         `;
         list.appendChild(card);
     });
+}
+
+function viewCustomerProfile(custId) {
+    const cust = getCustomer(custId);
+    document.getElementById('prof-cust-name').innerText = cust.name;
+    document.getElementById('prof-cust-phone').innerText = cust.phone || 'لا يوجد رقم';
+    document.getElementById('prof-cust-address').innerText = cust.address || 'لا يوجد عنوان';
+    document.getElementById('prof-cust-sponsor').innerText = cust.sponsor || 'لا يوجد كفيل';
+    document.getElementById('prof-cust-record').innerText = cust.recordNo || '-';
+    document.getElementById('prof-cust-page').innerText = cust.pageNo || '-';
+
+    const custContracts = contracts.filter(c => c.customerId === custId);
+    const list = document.getElementById('prof-contracts-list');
+    list.innerHTML = '';
+    
+    if(custContracts.length === 0) {
+        list.innerHTML = '<div class="text-center text-muted">لا توجد قيود مسجلة لهذا الزبون</div>';
+    } else {
+        custContracts.forEach((c, index) => {
+            const isCompleted = c.status === 'completed';
+            let item = document.createElement('div');
+            item.className = 'list-item';
+            item.innerHTML = `
+                <div class="list-item-header">
+                    <h4>قيد #${index+1} - ${c.product}</h4>
+                    <span class="badge" style="background:${isCompleted ? 'rgba(49,162,76,0.1)' : 'rgba(255,96,101,0.1)'}; color:${isCompleted ? 'var(--success)' : 'var(--accent)'};">${isCompleted ? 'مكتمل' : 'مستمر'}</span>
+                </div>
+                <div class="list-item-body">
+                    <span>السعر: ${c.totalPrice.toLocaleString()}</span>
+                    <span class="text-red font-bold">المتبقي: ${c.remaining.toLocaleString()}</span>
+                </div>
+                <div class="list-item-footer">
+                    <span style="font-size:12px; color:var(--text-muted);">${c.buyDate}</span>
+                    <button class="btn btn-primary btn-sm" onclick="closeModal('customer-profile-modal'); openPayments(${c.id})">الدفعات</button>
+                </div>
+            `;
+            list.appendChild(item);
+        });
+    }
+    openModal('customer-profile-modal');
 }
 
 function editCustomerModal(id) {
@@ -602,6 +684,8 @@ function editCustomerModal(id) {
     document.getElementById('edit-cust-phone').value = cust.phone;
     document.getElementById('edit-cust-address').value = cust.address;
     document.getElementById('edit-cust-sponsor').value = cust.sponsor;
+    document.getElementById('edit-cust-record-no').value = cust.recordNo || '';
+    document.getElementById('edit-cust-page-no').value = cust.pageNo || '';
     openModal('edit-customer-modal');
 }
 
@@ -611,10 +695,12 @@ function saveCustomerEdit() {
     const phone = document.getElementById('edit-cust-phone').value;
     const address = document.getElementById('edit-cust-address').value;
     const sponsor = document.getElementById('edit-cust-sponsor').value;
+    const recordNo = document.getElementById('edit-cust-record-no').value;
+    const pageNo = document.getElementById('edit-cust-page-no').value;
     
     if(!name) return alert('اسم الزبون مطلوب');
     
-    updateCustomer(id, { name, phone, address, sponsor });
+    updateCustomer(id, { name, phone, address, sponsor, recordNo, pageNo });
     closeModal('edit-customer-modal');
     renderCustomers();
     renderContracts();
@@ -627,30 +713,79 @@ function deleteCustomerBtn(id) {
         alert('لا يمكن حذف الزبون لأن لديه عقود مسجلة. قم بحذف العقود المرتبطة أولاً.');
         return;
     }
-    
     if(confirm('هل أنت متأكد من حذف هذا الزبون نهائياً؟')) {
         deleteCustomerData(id);
         renderCustomers();
     }
 }
 
-// --- الإعدادات (الموظفين والنسخ) ---
-function addUser() {
+// --- الإعدادات (إدارة الموظفين) ---
+function togglePermsBox() {
+    const role = document.getElementById('new-emp-role').value;
+    document.getElementById('emp-perms-box').style.display = role === 'admin' ? 'none' : 'block';
+}
+
+function openEmployeesModal() {
+    document.getElementById('new-emp-role').value = 'employee';
+    togglePermsBox();
+    renderUsers();
+    openModal('employee-settings-modal');
+}
+
+function saveEmployee() {
     const name = document.getElementById('new-emp-name').value.trim();
     const pass = document.getElementById('new-emp-pass').value.trim();
     const role = document.getElementById('new-emp-role').value;
+    
     if (!name || !pass) return alert('أكمل البيانات');
-    
-    // منع إضافة مستخدم باسم Zain
     if (name.toLowerCase() === 'zain') return alert('هذا الاسم غير متاح للاستخدام');
-    if (users.find(u => u.name === name)) return alert('الاسم موجود مسبقاً');
     
-    users.push({ id: Date.now(), name, pass, role });
+    const isEdit = document.getElementById('emp-edit-id').value;
+    if (!isEdit && users.find(u => u.name === name)) return alert('الاسم موجود مسبقاً');
+    
+    const perms = {
+        add_contract: document.getElementById('perm-add-contract').checked,
+        edit_contract: document.getElementById('perm-edit-contract').checked,
+        del_contract: document.getElementById('perm-del-contract').checked,
+        add_payment: document.getElementById('perm-add-payment').checked,
+        manage_cust: document.getElementById('perm-manage-cust').checked,
+        view_accounts: document.getElementById('perm-view-accounts').checked
+    };
+    
+    if(isEdit) {
+        const idx = users.findIndex(u => u.id == isEdit);
+        users[idx] = { id: users[idx].id, name, pass, role, perms };
+        document.getElementById('emp-edit-id').value = '';
+    } else {
+        users.push({ id: Date.now(), name, pass, role, perms });
+    }
+    
     localStorage.setItem('zain_users', JSON.stringify(users));
     
     document.getElementById('new-emp-name').value = '';
     document.getElementById('new-emp-pass').value = '';
+    document.getElementById('btn-save-emp').innerText = 'إضافة / حفظ الموظف';
     renderUsers();
+}
+
+function editUser(id) {
+    const user = users.find(u => u.id === id);
+    if(!user) return;
+    document.getElementById('emp-edit-id').value = user.id;
+    document.getElementById('new-emp-name').value = user.name;
+    document.getElementById('new-emp-pass').value = user.pass;
+    document.getElementById('new-emp-role').value = user.role;
+    
+    if(user.perms) {
+        document.getElementById('perm-add-contract').checked = user.perms.add_contract || false;
+        document.getElementById('perm-edit-contract').checked = user.perms.edit_contract || false;
+        document.getElementById('perm-del-contract').checked = user.perms.del_contract || false;
+        document.getElementById('perm-add-payment').checked = user.perms.add_payment || false;
+        document.getElementById('perm-manage-cust').checked = user.perms.manage_cust || false;
+        document.getElementById('perm-view-accounts').checked = user.perms.view_accounts || false;
+    }
+    togglePermsBox();
+    document.getElementById('btn-save-emp').innerText = 'حفظ التعديلات للموظف';
 }
 
 function deleteUser(id) {
@@ -675,7 +810,10 @@ function renderUsers() {
                     <strong><i class="fa fa-user"></i> ${u.name}</strong>
                     <span class="badge ml-10" style="background:var(--bg-color); color:var(--text-muted);">${u.role==='admin'?'مدير':'موظف'}</span>
                 </div>
-                <button class="btn btn-outline-danger btn-sm" onclick="deleteUser(${u.id})"><i class="fa fa-trash"></i></button>
+                <div>
+                    <button class="icon-btn text-primary" onclick="editUser(${u.id})"><i class="fa fa-edit"></i></button>
+                    <button class="icon-btn text-danger" onclick="deleteUser(${u.id})"><i class="fa fa-trash"></i></button>
+                </div>
             </div>
         `;
         list.appendChild(card);
@@ -710,7 +848,19 @@ function importData() {
     reader.readAsText(file);
 }
 
-// --- الطباعة (A5) ---
+// --- نظام الطباعة والتصدير المعالج للجوال (Mobile Print Fix & PDF) ---
+function triggerPrint() {
+    document.body.classList.add('printing');
+    setTimeout(() => {
+        window.print();
+        setTimeout(() => {
+            document.body.classList.remove('printing');
+            document.getElementById('print-area').innerHTML = '';
+        }, 1000);
+    }, 100);
+}
+
+// --- طباعة العقود والوصولات ---
 function printContract(contractId) {
     const contract = contracts.find(c => c.id === contractId);
     const cust = getCustomer(contract.customerId);
@@ -727,6 +877,8 @@ function printContract(contractId) {
             <div class="print-row"><span>رقم الهاتف:</span> <strong>${cust ? cust.phone : ''}</strong></div>
             <div class="print-row"><span>العنوان:</span> <strong>${cust ? cust.address : ''}</strong></div>
             <div class="print-row"><span>الكفيل:</span> <strong>${cust ? cust.sponsor : 'لا يوجد'}</strong></div>
+            ${cust && cust.recordNo ? `<div class="print-row"><span>رقم السجل:</span> <strong>${cust.recordNo}</strong></div>` : ''}
+            ${cust && cust.pageNo ? `<div class="print-row"><span>رقم الصفحة:</span> <strong>${cust.pageNo}</strong></div>` : ''}
         </div>
 
         <h4 style="margin-top:20px; border-bottom:1px solid #ccc; padding-bottom:5px;">تفاصيل المبيع والأقساط</h4>
@@ -744,7 +896,7 @@ function printContract(contractId) {
             <div>توقيع الطرف الأول (البائع)<br><br>..................................</div>
         </div>
     `;
-    window.print();
+    triggerPrint();
 }
 
 function printReceipt(contractId, payId) {
@@ -769,17 +921,181 @@ function printReceipt(contractId, payId) {
             <div>توقيع الإدارة</div>
         </div>
     `;
-    window.print();
+    triggerPrint();
 }
 
+// --- إعداد التقارير المالية التفصيلية (يومي، شهري، سنوي) ---
+function setReportDate(type) {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+    
+    if (type === 'today') {
+        document.getElementById('report-from').value = todayStr;
+        document.getElementById('report-to').value = todayStr;
+    } else if (type === 'month') {
+        document.getElementById('report-from').value = `${yyyy}-${mm}-01`;
+        const lastDay = new Date(yyyy, today.getMonth() + 1, 0).getDate();
+        document.getElementById('report-to').value = `${yyyy}-${mm}-${lastDay}`;
+    } else if (type === 'year') {
+        document.getElementById('report-from').value = `${yyyy}-01-01`;
+        document.getElementById('report-to').value = `${yyyy}-12-31`;
+    }
+}
 
-// --- تسجيل PWA Service Worker للعمل كتطبيق حقيقي وبدون إنترنت ---
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').then(reg => {
-            console.log('Service Worker Registered successfully.', reg);
-        }).catch(err => {
-            console.log('Service Worker Registration failed.', err);
+function generateReportHTML() {
+    const fromDate = document.getElementById('report-from').value;
+    const toDate = document.getElementById('report-to').value;
+    
+    if(!fromDate || !toDate) {
+        alert('يرجى تحديد فترة التقرير (من - إلى)');
+        return null;
+    }
+
+    let periodSales = 0;
+    let periodCollected = 0;
+    
+    let newContractsLog = [];
+    let paymentsLog = [];
+
+    contracts.forEach(c => {
+        const cust = getCustomer(c.customerId);
+        const custName = cust ? cust.name : 'غير معروف';
+
+        // مبيعات تمت في هذه الفترة
+        if (c.buyDate >= fromDate && c.buyDate <= toDate) {
+            periodSales += c.totalPrice;
+            periodCollected += c.advance;
+            newContractsLog.push({
+                date: c.buyDate,
+                customer: custName,
+                product: c.product,
+                total: c.totalPrice,
+                advance: c.advance
+            });
+        }
+
+        // دفعات تم تسديدها في هذه الفترة
+        c.payments.forEach(p => {
+            if (p.paid && p.payDate >= fromDate && p.payDate <= toDate) {
+                periodCollected += p.amount;
+                paymentsLog.push({
+                    date: p.payDate,
+                    customer: custName,
+                    product: c.product,
+                    amount: p.amount,
+                    installmentNo: p.id
+                });
+            }
         });
+    });
+
+    newContractsLog.sort((a,b) => new Date(a.date) - new Date(b.date));
+    paymentsLog.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+    let html = `
+        <div class="print-header">Zain للاقساط<br><span style="font-size:14px; font-weight:normal; background:#eee; padding:5px 15px; border-radius:10px;">تقرير مالي مفصل</span></div>
+        <div class="print-row" style="justify-content:center; margin-bottom:20px;">
+            <span style="font-size:14px;">الفترة من: <strong dir="ltr">${fromDate}</strong> &nbsp; إلى: <strong dir="ltr">${toDate}</strong></span>
+        </div>
+        
+        <h4 style="border-bottom:1px solid #ccc; padding-bottom:5px;">الملخص المالي للفترة</h4>
+        <div class="print-box mt-10">
+            <div class="print-row"><span>إجمالي المبيعات الجديدة:</span> <strong>${periodSales.toLocaleString()} دينار</strong></div>
+            <div class="print-row"><span>إجمالي التحصيلات (مقدم + أقساط):</span> <strong class="text-green" style="font-size:16px;">${periodCollected.toLocaleString()} دينار</strong></div>
+        </div>
+
+        <h4 style="margin-top:20px; border-bottom:1px solid #ccc; padding-bottom:5px;">تفاصيل التحصيلات (الأقساط المسددة)</h4>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>التاريخ</th>
+                    <th>الزبون</th>
+                    <th>المنتج</th>
+                    <th>القسط رقم</th>
+                    <th>المبلغ</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${paymentsLog.length > 0 ? paymentsLog.map(p => `
+                    <tr>
+                        <td>${p.date}</td>
+                        <td>${p.customer}</td>
+                        <td>${p.product}</td>
+                        <td>${p.installmentNo}</td>
+                        <td class="text-green font-bold">${p.amount.toLocaleString()}</td>
+                    </tr>
+                `).join('') : '<tr><td colspan="5" style="text-align:center;">لا توجد تحصيلات</td></tr>'}
+            </tbody>
+        </table>
+
+        <h4 style="margin-top:20px; border-bottom:1px solid #ccc; padding-bottom:5px;">تفاصيل المبيعات (العقود الجديدة)</h4>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>التاريخ</th>
+                    <th>الزبون</th>
+                    <th>المنتج</th>
+                    <th>المقدم</th>
+                    <th>الإجمالي</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${newContractsLog.length > 0 ? newContractsLog.map(c => `
+                    <tr>
+                        <td>${c.date}</td>
+                        <td>${c.customer}</td>
+                        <td>${c.product}</td>
+                        <td>${c.advance.toLocaleString()}</td>
+                        <td class="font-bold">${c.total.toLocaleString()}</td>
+                    </tr>
+                `).join('') : '<tr><td colspan="5" style="text-align:center;">لا توجد مبيعات جديدة</td></tr>'}
+            </tbody>
+        </table>
+        
+        <div class="print-footer" style="margin-top:40px;">
+            <div>توقيع أمين الصندوق<br><br>..................................</div>
+            <div>توقيع الإدارة<br><br>..................................</div>
+        </div>
+    `;
+    return { html, title: `Report_${fromDate}_to_${toDate}` };
+}
+
+function printReport() {
+    const report = generateReportHTML();
+    if(!report) return;
+    document.getElementById('print-area').innerHTML = report.html;
+    triggerPrint();
+}
+
+function exportReportPDF() {
+    if(typeof html2pdf === 'undefined') {
+        alert('حدث خطأ في تحميل مكتبة PDF. يرجى التحقق من اتصال الإنترنت.');
+        return;
+    }
+    const report = generateReportHTML();
+    if(!report) return;
+
+    const element = document.createElement('div');
+    element.innerHTML = report.html;
+    element.style.padding = '20px';
+    element.style.fontFamily = 'Cairo, sans-serif';
+    element.style.direction = 'rtl';
+    element.style.background = 'white';
+    
+    document.body.classList.add('printing');
+    
+    const opt = {
+        margin:       10,
+        filename:     `${report.title}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    
+    html2pdf().set(opt).from(element).save().then(() => {
+        document.body.classList.remove('printing');
     });
 }
