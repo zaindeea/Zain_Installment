@@ -10,13 +10,15 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- مكتبة تحويل HTML إلى PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
     
     <!-- شاشة البداية (Splash Screen) -->
     <div id="splash-screen">
         <div class="splash-logo">
-            <svg id="splash-svg" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="150px" height="auto" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd" viewBox="0 0 120000 80000" xmlns:xlink="http://www.w3.org/1999/xlink">
+            <svg id="splash-svg" xmlns="http://www.w3.org/2000/svg" width="150px" height="auto" viewBox="0 0 120000 80000">
              <defs><style type="text/css"> .fil1 {fill:#0E647D} .fil0 {fill:#FF6065} </style></defs>
              <g id="Layer_x0020_1">
               <polygon class="fil0" points="1502.76,21489.12 11858.86,34598.56 12516.38,33831.44 12516.38,27475.39 29721.49,27584.98 15310.85,44735.34 21064.14,44790.14 38707.63,26817.87 38707.63,21489.12 "/>
@@ -35,7 +37,7 @@
     <div id="login-screen" class="hidden">
         <div class="login-card">
             <div class="text-center mb-20">
-                <svg id="login-svg" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="120px" height="auto" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd" viewBox="0 0 120000 80000" xmlns:xlink="http://www.w3.org/1999/xlink">
+                <svg id="login-svg" xmlns="http://www.w3.org/2000/svg" width="120px" height="auto" viewBox="0 0 120000 80000">
                     <defs><style type="text/css"> .fil1 {fill:#0E647D} .fil0 {fill:#FF6065} </style></defs>
                     <g id="Layer_x0020_1">
                     <polygon class="fil0" points="1502.76,21489.12 11858.86,34598.56 12516.38,33831.44 12516.38,27475.39 29721.49,27584.98 15310.85,44735.34 21064.14,44790.14 38707.63,26817.87 38707.63,21489.12 "/>
@@ -50,14 +52,20 @@
                 <p class="text-muted mt-10">تسجيل الدخول للنظام</p>
             </div>
             <div class="input-group">
-                <i class="fa fa-user"></i>
-                <input type="text" id="login-user" placeholder="اسم المستخدم">
+                <label>اسم المستخدم</label>
+                <div class="input-wrapper">
+                    <i class="fa fa-user"></i>
+                    <input type="text" id="login-user" placeholder="ادخل اسم المستخدم">
+                </div>
             </div>
             <div class="input-group">
-                <i class="fa fa-lock"></i>
-                <input type="password" id="login-pass" placeholder="كلمة المرور">
+                <label>كلمة المرور</label>
+                <div class="input-wrapper">
+                    <i class="fa fa-lock"></i>
+                    <input type="password" id="login-pass" placeholder="ادخل كلمة المرور">
+                </div>
             </div>
-            <button class="btn btn-primary w-100" onclick="login()">تسجيل الدخول <i class="fa fa-arrow-left mr-5"></i></button>
+            <button class="btn btn-primary w-100 mt-10" onclick="login()">تسجيل الدخول <i class="fa fa-arrow-left mr-5"></i></button>
             <p id="login-error" class="text-red text-center mt-10"></p>
         </div>
     </div>
@@ -69,7 +77,7 @@
         <header class="app-header">
             <div class="header-left">
                 <div id="app-logo-container" style="display:flex; align-items:center;">
-                    <svg id="app-logo" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="80px" height="auto" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd" viewBox="0 0 120000 80000" xmlns:xlink="http://www.w3.org/1999/xlink">
+                    <svg id="app-logo" xmlns="http://www.w3.org/2000/svg" width="80px" height="auto" viewBox="0 0 120000 80000">
                         <defs><style type="text/css"> .fil1 {fill:#0E647D} .fil0 {fill:#FF6065} </style></defs>
                         <g id="Layer_x0020_1">
                         <polygon class="fil0" points="1502.76,21489.12 11858.86,34598.56 12516.38,33831.44 12516.38,27475.39 29721.49,27584.98 15310.85,44735.34 21064.14,44790.14 38707.63,26817.87 38707.63,21489.12 "/>
@@ -90,9 +98,9 @@
         </header>
 
         <!-- منطقة المحتوى -->
-        <main class="app-content">
+        <main class="app-content" id="main-content">
             
-            <!-- قسم الإحصائيات -->
+            <!-- قسم الإحصائيات (الرئيسية) -->
             <section id="view-dashboard" class="view-section">
                 <div class="page-header flex-between">
                     <div>
@@ -125,7 +133,7 @@
                 </div>
 
                 <!-- زر عقد جديد في الرئيسية -->
-                <div class="mobile-card mt-20" style="padding: 0; background: linear-gradient(135deg, #0E647D, #168ba8); cursor: pointer; box-shadow: 0 8px 15px rgba(14, 100, 125, 0.3); transition: transform 0.2s;" onclick="openNewContractModal()" onmousedown="this.style.transform='scale(0.97)'" onmouseup="this.style.transform='scale(1)'" ontouchstart="this.style.transform='scale(0.97)'" ontouchend="this.style.transform='scale(1)'">
+                <div class="mobile-card mt-20 perm-add-contract new-contract-banner" onclick="openNewContractModal()">
                     <div style="display: flex; align-items: center; justify-content: space-between; padding: 20px; color: white;">
                         <div style="display: flex; align-items: center; gap: 15px;">
                             <div style="background: rgba(255,255,255,0.2); width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
@@ -139,11 +147,9 @@
                         <i class="fa fa-chevron-left" style="opacity: 0.7; font-size: 18px;"></i>
                     </div>
                 </div>
-                <!-- نهاية زر عقد جديد -->
 
                 <div class="flex-between mt-20 mb-10">
                     <h4 class="section-title" style="margin:0;">تنبيهات الاستحقاق</h4>
-                    <button class="btn btn-whatsapp btn-sm admin-only" onclick="sendBulkWhatsApp()"><i class="fab fa-whatsapp"></i> مراسلة الكل</button>
                 </div>
                 
                 <div id="delayed-list" class="list-container">
@@ -155,7 +161,7 @@
             <section id="view-contracts" class="view-section hidden">
                 <div class="page-header flex-between">
                     <h3>العقود</h3>
-                    <button class="btn btn-primary btn-sm" onclick="openNewContractModal()"><i class="fa fa-plus"></i> عقد جديد</button>
+                    <button class="btn btn-primary btn-sm perm-add-contract" onclick="openNewContractModal()"><i class="fa fa-plus"></i> عقد جديد</button>
                 </div>
                 
                 <div class="search-bar mt-10">
@@ -184,64 +190,105 @@
                 <div id="customers-list" class="list-container mt-10"></div>
             </section>
 
+            <!-- قسم الحسابات الجديد -->
+            <section id="view-accounts" class="view-section hidden perm-view-accounts">
+                <div class="page-header">
+                    <h3>الحسابات المالية</h3>
+                </div>
+                
+                <div class="mobile-card mt-10" style="border-right: 4px solid var(--primary);">
+                    <h4><i class="fa fa-money-bill-wave text-success"></i> إجمالي رأس المال الكلي</h4>
+                    <h2 id="acc-total-capital" class="text-primary mt-10">0 دينار</h2>
+                    <p class="text-muted text-sm mt-5">يشمل جميع المبالغ المحصلة والمتبقية كديون.</p>
+                </div>
+                
+                <div class="mobile-grid-2 mt-10">
+                    <div class="mobile-card" style="border-right: 4px solid var(--success);">
+                        <p class="text-muted text-sm"><i class="fa fa-hand-holding-usd"></i> النقد المتوفر</p>
+                        <h3 id="acc-cash" class="text-success mt-5">0</h3>
+                    </div>
+                    <div class="mobile-card" style="border-right: 4px solid var(--warning);">
+                        <p class="text-muted text-sm"><i class="fa fa-file-invoice-dollar"></i> الديون بالسوق</p>
+                        <h3 id="acc-debt" class="text-warning mt-5">0</h3>
+                    </div>
+                </div>
+
+                <div class="mobile-card mt-20">
+                    <h4 class="mb-10"><i class="fa fa-file-pdf text-danger"></i> طباعة وتصدير التقارير مفصلة</h4>
+                    
+                    <div class="mobile-grid-2 mb-10">
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label style="font-size:12px;">من تاريخ</label>
+                            <div class="input-wrapper"><input type="date" id="report-from" style="padding:8px;"></div>
+                        </div>
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label style="font-size:12px;">إلى تاريخ</label>
+                            <div class="input-wrapper"><input type="date" id="report-to" style="padding:8px;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="action-btns mb-15" style="justify-content: center;">
+                        <button class="btn btn-outline btn-sm" onclick="setReportDate('today')">اليوم</button>
+                        <button class="btn btn-outline btn-sm" onclick="setReportDate('month')">هذا الشهر</button>
+                        <button class="btn btn-outline btn-sm" onclick="setReportDate('year')">هذه السنة</button>
+                    </div>
+
+                    <div class="mobile-grid-2">
+                        <button class="btn btn-primary w-100" onclick="printReport()"><i class="fa fa-print"></i> طباعة التقرير</button>
+                        <button class="btn btn-danger w-100" onclick="exportReportPDF()"><i class="fa fa-download"></i> تصدير PDF</button>
+                    </div>
+                </div>
+
+            </section>
+
             <!-- قسم الإعدادات -->
-            <section id="view-settings" class="view-section hidden admin-only">
+            <section id="view-settings" class="view-section hidden">
                 <div class="page-header">
                     <h3>الإعدادات</h3>
                 </div>
                 
-                <div class="mobile-card mt-10">
-                    <h4><i class="fab fa-whatsapp text-green"></i> رسائل المتأخرين (واتساب)</h4>
-                    <p class="text-muted text-sm mt-5 mb-10">تستطيع استخدام المتغيرات: [الاسم] ، [المبلغ] ، [المنتج]</p>
-                    <textarea id="wa-template" rows="4" style="width:100%; border:1px solid var(--border); border-radius:8px; padding:10px; background:var(--bg-color); color:var(--text-main); font-family:'Cairo';"></textarea>
-                    <button class="btn btn-primary w-100 mt-10" onclick="saveWaTemplate()">حفظ النص</button>
-                </div>
-
-                <div class="mobile-card mt-20">
-                    <h4><i class="fa fa-database text-primary"></i> النسخ الاحتياطي</h4>
-                    <button class="btn btn-outline w-100 mt-10 mb-10" onclick="exportData()"><i class="fa fa-download"></i> تصدير نسخة احتياطية</button>
-                    <div class="file-upload-wrapper">
-                        <button class="btn btn-outline-danger w-100" onclick="document.getElementById('import-file').click()"><i class="fa fa-upload"></i> استعادة البيانات</button>
-                        <input type="file" id="import-file" accept=".json" onchange="importData()" style="display:none;">
+                <div class="list-container mt-10">
+                    <div class="list-item clickable-item perm-admin" onclick="openModal('wa-settings-modal')">
+                        <div class="list-item-header" style="border:none; padding:0;">
+                            <h4 style="color:var(--text-main);"><i class="fab fa-whatsapp text-green"></i> رسائل المتأخرين (واتساب)</h4>
+                            <i class="fa fa-chevron-left text-muted"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="list-item clickable-item perm-admin" onclick="openModal('backup-settings-modal')">
+                        <div class="list-item-header" style="border:none; padding:0;">
+                            <h4 style="color:var(--text-main);"><i class="fa fa-database text-primary"></i> النسخ الاحتياطي والاستعادة</h4>
+                            <i class="fa fa-chevron-left text-muted"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="list-item clickable-item perm-admin" onclick="openEmployeesModal()">
+                        <div class="list-item-header" style="border:none; padding:0;">
+                            <h4 style="color:var(--text-main);"><i class="fa fa-users text-primary"></i> إدارة الموظفين والصلاحيات</h4>
+                            <i class="fa fa-chevron-left text-muted"></i>
+                        </div>
                     </div>
                 </div>
-                
-                <div class="mobile-card mt-20">
-                    <h4><i class="fa fa-users text-primary"></i> إدارة الموظفين</h4>
-                    <div class="input-group mt-10">
-                        <i class="fa fa-user"></i>
-                        <input type="text" id="new-emp-name" placeholder="اسم الموظف">
-                    </div>
-                    <div class="input-group">
-                        <i class="fa fa-lock"></i>
-                        <input type="text" id="new-emp-pass" placeholder="كلمة المرور">
-                    </div>
-                    <div class="input-group">
-                        <i class="fa fa-shield-alt"></i>
-                        <select id="new-emp-role">
-                            <option value="employee">موظف (إضافة وتسديد)</option>
-                            <option value="admin">مدير (صلاحيات كاملة)</option>
-                        </select>
-                    </div>
-                    <button class="btn btn-primary w-100 mt-10" onclick="addUser()">إضافة</button>
-                </div>
-                
-                <div id="users-list" class="list-container mt-20"></div>
             </section>
         </main>
 
         <!-- شريط التنقل السفلي -->
         <nav class="bottom-nav">
-            <button class="nav-item active" onclick="switchTab('dashboard')" id="nav-dashboard">
-                <i class="fa fa-home"></i><span>الرئيسية</span>
-            </button>
-            <button class="nav-item" onclick="switchTab('contracts')" id="nav-contracts">
+            <button class="nav-item tab-contracts" onclick="switchTab('contracts')" id="nav-contracts">
                 <i class="fa fa-file-invoice-dollar"></i><span>العقود</span>
             </button>
-            <button class="nav-item" onclick="switchTab('customers')" id="nav-customers">
+            <button class="nav-item tab-customers" onclick="switchTab('customers')" id="nav-customers">
                 <i class="fa fa-users"></i><span>الزبائن</span>
             </button>
-            <button class="nav-item admin-only" onclick="switchTab('settings')" id="nav-settings">
+            
+            <button class="nav-item center-fab active" onclick="switchTab('dashboard')" id="nav-dashboard">
+                <i class="fa fa-home"></i>
+            </button>
+            
+            <button class="nav-item tab-accounts perm-view-accounts" onclick="switchTab('accounts')" id="nav-accounts">
+                <i class="fa fa-wallet"></i><span>الحسابات</span>
+            </button>
+            <button class="nav-item tab-settings" onclick="switchTab('settings')" id="nav-settings">
                 <i class="fa fa-cog"></i><span>الإعدادات</span>
             </button>
         </nav>
@@ -256,28 +303,88 @@
             </div>
             <div class="modal-body">
                 <h4 class="step-title">1. بيانات الزبون</h4>
+                
                 <div class="input-group">
-                    <input type="text" id="c-name" list="customers-list" placeholder="اسم الزبون" required>
-                    <datalist id="customers-list"></datalist>
+                    <label>اسم الزبون (أو اختر من القائمة للتعرف التلقائي)</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="c-name" list="customers-list" placeholder="ادخل اسم الزبون..." required>
+                        <datalist id="customers-list"></datalist>
+                    </div>
                 </div>
-                <div class="input-group"><input type="tel" id="c-phone" placeholder="رقم الهاتف"></div>
-                <div class="input-group"><input type="text" id="c-address" placeholder="العنوان"></div>
-                <div class="input-group"><input type="text" id="c-sponsor" placeholder="اسم الكفيل"></div>
+                <div class="input-group">
+                    <label>رقم الهاتف</label>
+                    <div class="input-wrapper">
+                        <input type="tel" id="c-phone" placeholder="مثال: 07700000000">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>العنوان</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="c-address" placeholder="عنوان السكن...">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>اسم الكفيل</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="c-sponsor" placeholder="اسم الكفيل الثلاثي (إن وجد)">
+                    </div>
+                </div>
+                <div class="mobile-grid-2">
+                    <div class="input-group">
+                        <label>رقم السجل</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="c-record-no" placeholder="مثال: 12">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>رقم الصفحة</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="c-page-no" placeholder="مثال: 45">
+                        </div>
+                    </div>
+                </div>
                 
                 <h4 class="step-title mt-20">2. تفاصيل التقسيط</h4>
-                <div class="input-group"><input type="text" id="c-product" placeholder="المنتج" required></div>
                 <div class="input-group">
-                    <label style="font-size:12px; color:var(--text-muted); padding:0 10px;">تاريخ الشراء</label>
-                    <input type="date" id="c-date" required>
+                    <label>نوع المنتج</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="c-product" placeholder="مثال: ثلاجة LG..." required>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>تاريخ الشراء</label>
+                    <div class="input-wrapper">
+                        <input type="date" id="c-date" required>
+                    </div>
                 </div>
                 
                 <div class="mobile-grid-2">
-                    <div class="input-group"><input type="number" id="c-price" placeholder="السعر الكلي" oninput="calcPreview()" required></div>
-                    <div class="input-group"><input type="number" id="c-percent" placeholder="الفائدة (%)" value="0" oninput="calcPreview()"></div>
+                    <div class="input-group">
+                        <label>السعر الكلي</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="c-price" placeholder="المبلغ" oninput="calcPreview()" required>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>الفائدة (%)</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="c-percent" value="0" oninput="calcPreview()">
+                        </div>
+                    </div>
                 </div>
                 <div class="mobile-grid-2">
-                    <div class="input-group"><input type="number" id="c-advance" placeholder="المقدمة" value="0" oninput="calcPreview()"></div>
-                    <div class="input-group"><input type="number" id="c-months" placeholder="الأشهر" value="1" min="1" oninput="calcPreview()" required></div>
+                    <div class="input-group">
+                        <label>الدفعة المقدمة</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="c-advance" value="0" oninput="calcPreview()">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>عدد الأشهر</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="c-months" value="1" min="1" oninput="calcPreview()" required>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="summary-card mt-10">
@@ -292,19 +399,66 @@
         </div>
     </div>
 
+    <!-- نافذة ملف الزبون وقيوده (Customer Profile) -->
+    <div id="customer-profile-modal" class="modal hidden">
+        <div class="modal-content mobile-full-modal">
+            <div class="modal-header">
+                <h3>ملف الزبون <span id="prof-cust-name" class="text-primary"></span></h3>
+                <button class="icon-btn" onclick="closeModal('customer-profile-modal')"><i class="fa fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="background: var(--bg-color);">
+                <div class="mobile-card mb-10">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px;">
+                        <div><i class="fa fa-phone text-muted"></i> <span id="prof-cust-phone"></span></div>
+                        <div><i class="fa fa-map-marker-alt text-muted"></i> <span id="prof-cust-address"></span></div>
+                        <div><i class="fa fa-user-shield text-muted"></i> <span id="prof-cust-sponsor"></span></div>
+                        <div><i class="fa fa-book text-muted"></i> السجلات: <span id="prof-cust-record" class="font-bold text-primary"></span></div>
+                        <div><i class="fa fa-file-alt text-muted"></i> الصفحات: <span id="prof-cust-page" class="font-bold text-primary"></span></div>
+                    </div>
+                </div>
+                <h4 class="section-title">قيود الزبون (العقود السابقة والحالية)</h4>
+                <div id="prof-contracts-list" class="list-container mt-10">
+                    <!-- يعبأ بعقود الزبون -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- نافذة تعديل بيانات زبون -->
     <div id="edit-customer-modal" class="modal hidden">
-        <div class="modal-content mobile-full-modal" style="height:auto; max-height:80vh;">
+        <div class="modal-content mobile-full-modal" style="height:auto; max-height:85vh;">
             <div class="modal-header">
                 <h3>تعديل بيانات الزبون</h3>
                 <button class="icon-btn" onclick="closeModal('edit-customer-modal')"><i class="fa fa-times"></i></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="edit-cust-id">
-                <div class="input-group"><input type="text" id="edit-cust-name" placeholder="اسم الزبون" required></div>
-                <div class="input-group"><input type="tel" id="edit-cust-phone" placeholder="رقم الهاتف"></div>
-                <div class="input-group"><input type="text" id="edit-cust-address" placeholder="العنوان"></div>
-                <div class="input-group"><input type="text" id="edit-cust-sponsor" placeholder="اسم الكفيل"></div>
+                <div class="input-group">
+                    <label>اسم الزبون</label>
+                    <div class="input-wrapper"><input type="text" id="edit-cust-name" required></div>
+                </div>
+                <div class="input-group">
+                    <label>رقم الهاتف</label>
+                    <div class="input-wrapper"><input type="tel" id="edit-cust-phone"></div>
+                </div>
+                <div class="input-group">
+                    <label>العنوان</label>
+                    <div class="input-wrapper"><input type="text" id="edit-cust-address"></div>
+                </div>
+                <div class="input-group">
+                    <label>اسم الكفيل</label>
+                    <div class="input-wrapper"><input type="text" id="edit-cust-sponsor"></div>
+                </div>
+                <div class="mobile-grid-2">
+                    <div class="input-group">
+                        <label>أرقام السجلات</label>
+                        <div class="input-wrapper"><input type="text" id="edit-cust-record-no"></div>
+                    </div>
+                    <div class="input-group">
+                        <label>أرقام الصفحات</label>
+                        <div class="input-wrapper"><input type="text" id="edit-cust-page-no"></div>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-primary w-100" onclick="saveCustomerEdit()">حفظ التعديلات</button>
@@ -320,13 +474,99 @@
                 <button class="icon-btn" onclick="closeModal('payments-modal')"><i class="fa fa-times"></i></button>
             </div>
             <div class="modal-body" style="padding: 0; background: var(--bg-color);">
-                <div id="pay-list" class="list-container">
+                <div id="pay-list" class="list-container" style="padding: 15px;">
                     <!-- يعبأ بالدفعات -->
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- النوافذ المنبثقة الفرعية للإعدادات -->
+    <!-- واتساب -->
+    <div id="wa-settings-modal" class="modal hidden">
+        <div class="modal-content mobile-full-modal" style="height:auto; max-height:80vh;">
+            <div class="modal-header">
+                <h3>إعدادات الواتساب</h3>
+                <button class="icon-btn" onclick="closeModal('wa-settings-modal')"><i class="fa fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted text-sm mb-10">تستطيع استخدام المتغيرات: [الاسم] ، [المبلغ] ، [المنتج]</p>
+                <div class="input-group">
+                    <label>نص رسالة المتأخرين</label>
+                    <div class="input-wrapper" style="align-items: flex-start;">
+                        <textarea id="wa-template" rows="5" style="width:100%; border:none; background:transparent; padding:15px; color:var(--text-main); font-family:'Cairo'; outline:none; resize:vertical;"></textarea>
+                    </div>
+                </div>
+                <button class="btn btn-primary w-100 mt-10" onclick="saveWaTemplate(); closeModal('wa-settings-modal');">حفظ النص</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- النسخ الاحتياطي -->
+    <div id="backup-settings-modal" class="modal hidden">
+        <div class="modal-content mobile-full-modal" style="height:auto; max-height:80vh;">
+            <div class="modal-header">
+                <h3>النسخ الاحتياطي</h3>
+                <button class="icon-btn" onclick="closeModal('backup-settings-modal')"><i class="fa fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <button class="btn btn-outline w-100 mb-10" onclick="exportData()"><i class="fa fa-download"></i> تصدير نسخة احتياطية</button>
+                <div class="file-upload-wrapper mt-20">
+                    <button class="btn btn-outline-danger w-100" onclick="document.getElementById('import-file').click()"><i class="fa fa-upload"></i> استعادة البيانات</button>
+                    <input type="file" id="import-file" accept=".json" onchange="importData()" style="display:none;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- إدارة الموظفين -->
+    <div id="employee-settings-modal" class="modal hidden">
+        <div class="modal-content mobile-full-modal">
+            <div class="modal-header">
+                <h3>إدارة الموظفين والصلاحيات</h3>
+                <button class="icon-btn" onclick="closeModal('employee-settings-modal')"><i class="fa fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="background: var(--bg-color);">
+                <div class="mobile-card mb-20">
+                    <h4 class="mb-10"><i class="fa fa-user-plus text-primary"></i> إضافة موظف جديد</h4>
+                    <input type="hidden" id="emp-edit-id">
+                    <div class="input-group">
+                        <label>اسم الموظف</label>
+                        <div class="input-wrapper"><input type="text" id="new-emp-name" placeholder="الاسم"></div>
+                    </div>
+                    <div class="input-group">
+                        <label>كلمة المرور</label>
+                        <div class="input-wrapper"><input type="text" id="new-emp-pass" placeholder="المرور"></div>
+                    </div>
+                    <div class="input-group">
+                        <label>نوع الحساب</label>
+                        <div class="input-wrapper">
+                            <select id="new-emp-role" onchange="togglePermsBox()">
+                                <option value="employee">موظف (مخصص)</option>
+                                <option value="admin">مدير (صلاحيات كاملة)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="emp-perms-box" style="background:var(--bg-color); padding:10px; border-radius:8px; margin-bottom:15px;">
+                        <label style="display:flex; align-items:center; margin-bottom:10px; font-weight:bold; font-size:14px;"><input type="checkbox" id="perm-add-contract"> إضافة عقود جديدة</label>
+                        <label style="display:flex; align-items:center; margin-bottom:10px; font-weight:bold; font-size:14px;"><input type="checkbox" id="perm-edit-contract"> تعديل العقود</label>
+                        <label style="display:flex; align-items:center; margin-bottom:10px; font-weight:bold; font-size:14px;"><input type="checkbox" id="perm-del-contract"> حذف العقود</label>
+                        <label style="display:flex; align-items:center; margin-bottom:10px; font-weight:bold; font-size:14px;"><input type="checkbox" id="perm-add-payment"> تسديد الدفعات</label>
+                        <label style="display:flex; align-items:center; margin-bottom:10px; font-weight:bold; font-size:14px;"><input type="checkbox" id="perm-manage-cust"> إدارة الزبائن</label>
+                        <label style="display:flex; align-items:center; margin-bottom:10px; font-weight:bold; font-size:14px;"><input type="checkbox" id="perm-view-accounts"> عرض الحسابات والتقارير</label>
+                    </div>
+
+                    <button class="btn btn-primary w-100" id="btn-save-emp" onclick="saveEmployee()">إضافة / حفظ الموظف</button>
+                </div>
+                
+                <h4 class="section-title">الموظفين الحاليين</h4>
+                <div id="users-list" class="list-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- مخرج الطباعة / الـ PDF -->
     <div id="print-area"></div>
 
     <script src="customers.js"></script>
